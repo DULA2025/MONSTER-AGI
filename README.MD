@@ -1,5 +1,3 @@
-Here is a complete `README.md` you can place at the root of https://github.com/DULA2025/MONSTER-AGI:
-
 ```markdown
 # MONSTER-AGI
 
@@ -95,5 +93,3 @@ https://github.com/DULA2025/MONSTER-AGI
 
 To be determined. See repository for current terms.
 ```
-
-Copy the content above into a file named `README.md` at the root of the repository. It accurately reflects the system we have built and tested, emphasizes the mathematical invariants, and gives clear entry points for anyone exploring the repo.
