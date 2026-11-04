@@ -124,16 +124,16 @@ https://github.com/DULA2025/MONSTER-AGI
 ```
 
 ---
-**Monster A24 model**
+# Monster A24 model
 
-How to run
+** How to run
 Install once: pip install flask flask-cors
 Put monster_a24_final.pt in the same folder as server.py.
 Run: python server.py
 Open digit_app.html in your browser.
 Draw a digit and click Recognize.
 The app uses your actual trained Monster A24 model (near-zero violation, ~98 % MNIST accuracy) for the predictions.
----
+**
 
 ---
 
