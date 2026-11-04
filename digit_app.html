@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Monster A24 Digit Recognizer</title>
+<style>
+  body { font-family: system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; background: #111; color: #eee; margin: 0; padding: 20px; }
+  h1 { margin-bottom: 8px; }
+  canvas { border: 2px solid #444; border-radius: 8px; background: #000; cursor: crosshair; touch-action: none; }
+  .controls { margin: 12px 0; }
+  button { background: #1f77b4; color: white; border: none; padding: 10px 20px; margin: 0 6px; border-radius: 6px; font-size: 16px; cursor: pointer; }
+  button:hover { background: #155a8a; }
+  #result { font-size: 48px; margin: 16px 0; min-height: 60px; }
+  #confidence { font-size: 18px; color: #aaa; }
+</style>
+</head>
+<body>
+  <h1>Monster A24 Digit Recognizer</h1>
+  <p>Draw a digit (0-9) and click Recognize</p>
+  <canvas id="canvas" width="280" height="280"></canvas>
+  <div class="controls">
+    <button id="clear">Clear</button>
+    <button id="recognize">Recognize</button>
+  </div>
+  <div id="result">?</div>
+  <div id="confidence"></div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+ctx.fillStyle = "#000";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.strokeStyle = "#fff";
+ctx.lineWidth = 18;
+ctx.lineCap = "round";
+ctx.lineJoin = "round";
+
+let drawing = false;
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+canvas.addEventListener("mousedown", e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener("mousemove", e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+canvas.addEventListener("mouseup", () => drawing = false);
+canvas.addEventListener("mouseleave", () => drawing = false);
+
+canvas.addEventListener("touchstart", e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener("touchmove", e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+canvas.addEventListener("touchend", () => drawing = false);
+
+document.getElementById("clear").onclick = () => {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  document.getElementById("result").textContent = "?";
+  document.getElementById("confidence").textContent = "";
+};
+
+document.getElementById("recognize").onclick = async () => {
+  // resize to 28x28 like MNIST
+  const tmp = document.createElement("canvas");
+  tmp.width = 28; tmp.height = 28;
+  const tctx = tmp.getContext("2d");
+  tctx.drawImage(canvas, 0, 0, 28, 28);
+  const img = tctx.getImageData(0, 0, 28, 28);
+  const pixels = [];
+  for (let i = 0; i < img.data.length; i += 4) {
+    // white stroke on black → keep as-is (digit = high value), matching MNIST ToTensor
+    pixels.push(img.data[i] / 255.0);
+  }
+
+  try {
+    const resp = await fetch("http://127.0.0.1:5000/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pixels })
+    });
+    const data = await resp.json();
+    document.getElementById("result").textContent = data.digit;
+    document.getElementById("confidence").textContent = `Confidence: ${(data.confidence * 100).toFixed(1)}%`;
+  } catch (err) {
+    document.getElementById("result").textContent = "Error";
+    document.getElementById("confidence").textContent = "Is the server running?";
+  }
+};
+</script>
+</body>
+</html>
